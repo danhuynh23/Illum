@@ -60,19 +60,30 @@ async def test_lipsync(image_path, audio_path):
                     data = json.loads(response)
                     
                     if "status" in data:
-                        print(f"Status: {data['message']}")
+                        if "message" in data:
+                            print(f"Status: {data['message']}")
                         if data["status"] == "success":
-                            # Save the video to client's output directory with timestamp
-                            video_bytes = base64.b64decode(data["video_base64"])
-                            timestamp = int(time.time())
-                            output_path = OUTPUT_DIR / "videos" / f"output_{timestamp}.mp4"
-                            with open(output_path, "wb") as f:
-                                f.write(video_bytes)
-                            print(f"Video saved to {output_path}")
-                            break
+                            if "video_base64" in data:
+                                # Save the video to client's output directory with timestamp
+                                video_bytes = base64.b64decode(data["video_base64"])
+                                timestamp = int(time.time())
+                                output_path = OUTPUT_DIR / "videos" / f"output_{timestamp}.mp4"
+                                with open(output_path, "wb") as f:
+                                    f.write(video_bytes)
+                                print(f"Video saved to {output_path}")
+                                break
+                            else:
+                                print("Error: No video data in response")
+                                break
                         elif data["status"] == "error":
-                            print(f"Error: {data['error']}")
+                            print(f"Error: {data.get('error', 'Unknown error')}")
                             break
+                        else:
+                            print(f"Unknown status: {data['status']}")
+                            continue
+                    else:
+                        print(f"Unexpected response format: {data}")
+                        break
                 except websockets.exceptions.ConnectionClosed as e:
                     print(f"Connection closed: {e}")
                     print(f"Time elapsed: {time.time() - start_time:.2f} seconds")
