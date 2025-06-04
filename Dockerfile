@@ -10,9 +10,7 @@ RUN apt-get update && apt-get install -y \
     python3.10 \
     python3-pip \
     ffmpeg \
-    libsm6 \
-    libxext6 \
-    libgl1-mesa-glx \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -28,10 +26,13 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p inputs outputs
+RUN mkdir -p app/inputs app/outputs
+
+# Set environment variables for Python path
+ENV PYTHONPATH=/app:/app/musetalk
 
 # Expose port
 EXPOSE 8000
 
 # Run the application
-CMD ["python3", "api.py"] 
+CMD ["python3", "app/api.py"] 
