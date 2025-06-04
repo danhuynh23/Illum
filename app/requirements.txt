@@ -5,3 +5,8 @@ numpy
 opencv-python
 requests
 websockets 
+diffusers
+transformers
+omegaconf
+tqdm 
+dlib 

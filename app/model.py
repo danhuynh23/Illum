@@ -1,34 +1,49 @@
 import torch
-import numpy as np
-import cv2
+import base64
+import tempfile
 import os
-import requests
-from io import BytesIO
+import subprocess
 
+from PIL import Image
+from transformers import AutoProcessor, AutoModelForCausalLM
+from diffusers import StableDiffusionPipeline
+
+# Setup MuseTalk model from HF
 def load_model():
-    # Download pre-trained model weights if not present
-    model_path = "wav2lip.pth"
-    if not os.path.exists(model_path):
-        url = "https://github.com/Rudrabha/Wav2Lip/releases/download/v1.0/wav2lip.pth"
-        response = requests.get(url)
-        with open(model_path, "wb") as f:
-            f.write(response.content)
-    
-    # Load model (placeholder: replace with actual Wav2Lip model loading code)
-    model = torch.load(model_path)
-    model.eval()
-    return model
+    model = AutoModelForCausalLM.from_pretrained("TMElyralab/MuseTalk")
+    processor = AutoProcessor.from_pretrained("TMElyralab/MuseTalk")
+    return model, processor
 
-def run_inference(model, image_bytes, audio_bytes):
-    # Convert image bytes to numpy array
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    # Convert audio bytes to numpy array (placeholder: replace with actual audio processing)
-    audio = np.frombuffer(audio_bytes, np.float32)
-    
-    # Run inference (placeholder: replace with actual Wav2Lip inference code)
-    # For now, return a dummy video (black frame)
-    dummy_video = np.zeros((100, 100, 3), dtype=np.uint8)
-    _, buffer = cv2.imencode(".mp4", dummy_video)
-    return buffer.tobytes() 
+# Save binary to file
+def save_temp_file(suffix, data):
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp.write(data)
+    tmp.close()
+    return tmp.name
+
+# Run inference with MuseTalk
+def run_inference(model_tuple, image_bytes, audio_bytes):
+    model, processor = model_tuple
+    image_path = save_temp_file(".jpg", image_bytes)
+    audio_path = save_temp_file(".wav", audio_bytes)
+    output_path = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False).name
+
+    # Call MuseTalk CLI or module (MuseTalk uses CLI in their repo)
+    cmd = [
+        "python3", "inference.py",
+        "--driven_audio", audio_path,
+        "--source_image", image_path,
+        "--output_path", output_path,
+        "--pretrained_model_path", "Ali-vilab/MuseTalk"
+    ]
+    subprocess.run(cmd, check=True)
+
+    with open(output_path, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+    # Clean up
+    os.unlink(image_path)
+    os.unlink(audio_path)
+    os.unlink(output_path)
+
+    return video_b64
