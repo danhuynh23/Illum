@@ -14,8 +14,10 @@ import os
 import sys
 import subprocess
 from PIL import Image
-from queue import Queue
+from queue import Queue, Empty
 import threading
+import yaml
+import shutil
 
 # Get the absolute path to the app directory
 APP_DIR = Path(__file__).parent.absolute()
@@ -89,6 +91,27 @@ async def run_inference(image_path, audio_path, websocket):
     (output_dir / "tmp").mkdir(exist_ok=True)
     (output_dir / "vid_output").mkdir(exist_ok=True)
     
+    # Update the config file with the new image and audio paths
+    config_path = APP_DIR / "configs/inference/test.yaml"
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+    
+    # Get relative paths from MUSETALK_DIR
+    relative_image_path = os.path.relpath(image_path, MUSETALK_DIR)
+    relative_audio_path = os.path.relpath(audio_path, MUSETALK_DIR)
+    
+    config["avator_1"]["video_path"] = relative_image_path
+    config["avator_1"]["audio_clips"]["audio_0"] = relative_audio_path
+    config["avator_1"]["output_dir"] = "results/v15/avatars/avator_1"
+    config["avator_1"]["tmp_dir"] = "results/v15/avatars/avator_1/tmp"
+    config["avator_1"]["vid_output_dir"] = "results/v15/avatars/avator_1/vid_output"
+    
+    with open(config_path, "w") as f:
+        yaml.safe_dump(config, f)
+    
+    print(f"[Debug] Updated config with image path: {relative_image_path}")
+    print(f"[Debug] Updated config with audio path: {relative_audio_path}")
+    
     # Send initial message
     await websocket.send_json({
         "status": "processing",
@@ -101,8 +124,8 @@ async def run_inference(image_path, audio_path, websocket):
         str(MUSETALK_DIR / "scripts/realtime_inference.py"),
         "--version", "v15",
         "--inference_config", str(APP_DIR / "configs/inference/test.yaml"),
-        "--fps", "25",
-        "--batch_size", "2"
+        "--fps", "20",
+        "--batch_size", "3"
     ]
     
     try:
@@ -142,7 +165,6 @@ async def run_inference(image_path, audio_path, websocket):
                     })
                     
                     # Copy the file to our output directory
-                    import shutil
                     our_output = output_dir / "result.mp4"
                     shutil.copy2(script_output, our_output)
                     
@@ -172,7 +194,7 @@ async def send_messages(websocket):
                 "status": "processing",
                 "message": message
             })
-        except Queue.Empty:
+        except Empty:
             # No messages in queue, continue
             continue
         except Exception as e:
@@ -203,43 +225,39 @@ async def websocket_endpoint(websocket: WebSocket):
                     "message": "Starting inference..."
                 })
                 
-                # Decode base64 data
+                # Decode and preprocess the image
                 image_bytes = base64.b64decode(message["image_base64"])
-                audio_bytes = base64.b64decode(message["audio_base64"])
-                
-                # Preprocess image
                 processed_image_bytes = preprocess_image(image_bytes)
                 
-                # Create temporary files
-                with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as img_file:
-                    img_file.write(processed_image_bytes)
-                    image_path = img_file.name
+                # Save the processed image
+                image_path = APP_DIR / "inputs" / "current_image.jpg"
+                with open(image_path, 'wb') as f:
+                    f.write(processed_image_bytes)
                 
-                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as audio_file:
-                    audio_file.write(audio_bytes)
-                    audio_path = audio_file.name
+                # Save the audio
+                audio_bytes = base64.b64decode(message["audio_base64"])
+                audio_path = APP_DIR / "inputs" / "current_audio.wav"
+                with open(audio_path, 'wb') as f:
+                    f.write(audio_bytes)
                 
-                try:
-                    # Start message sender in background
-                    message_sender = asyncio.create_task(send_messages(websocket))
-                    
-                    # Run inference (this will block and put messages in queue)
-                    video_base64 = await run_inference(image_path, audio_path, websocket)
-                    
-                    # Cancel message sender
-                    message_sender.cancel()
-                    
-                    # Send the result
-                    await websocket.send_json({
-                        "status": "success",
-                        "video_base64": video_base64
-                    })
-                    
-                finally:
-                    # Clean up temporary files
-                    os.unlink(image_path)
-                    os.unlink(audio_path)
-                    
+                print(f"[Debug] Saved processed image to: {image_path}")
+                print(f"[Debug] Saved audio to: {audio_path}")
+                
+                # Start message sender in background
+                message_sender = asyncio.create_task(send_messages(websocket))
+                
+                # Run inference
+                video_base64 = await run_inference(image_path, audio_path, websocket)
+                
+                # Cancel message sender
+                message_sender.cancel()
+                
+                # Send the result
+                await websocket.send_json({
+                    "status": "success",
+                    "video_base64": video_base64
+                })
+                
             except Exception as e:
                 await websocket.send_json({
                     "status": "error",
