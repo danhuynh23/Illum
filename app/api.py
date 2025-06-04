@@ -22,6 +22,16 @@ import shutil
 # Get the absolute path to the app directory
 APP_DIR = Path(__file__).parent.absolute()
 MUSETALK_DIR = APP_DIR / "musetalk"
+PROJECT_ROOT = APP_DIR.parent
+
+# Define input/output directories
+INPUT_DIR = PROJECT_ROOT / "inputs"
+OUTPUT_DIR = PROJECT_ROOT / "outputs"
+
+# Create directories if they don't exist
+(INPUT_DIR / "images").mkdir(parents=True, exist_ok=True)
+(INPUT_DIR / "audio").mkdir(parents=True, exist_ok=True)
+(OUTPUT_DIR / "videos").mkdir(parents=True, exist_ok=True)
 
 # Add both app and musetalk directories to Python path
 sys.path.extend([str(APP_DIR), str(MUSETALK_DIR)])
@@ -85,11 +95,9 @@ def preprocess_image(image_bytes):
 
 async def run_inference(image_path, audio_path, websocket):
     # Ensure output directory exists
-    output_dir = APP_DIR / "outputs"
+    output_dir = OUTPUT_DIR / "videos"
     print(f"Output directory: {output_dir}")
     output_dir.mkdir(exist_ok=True)
-    (output_dir / "tmp").mkdir(exist_ok=True)
-    (output_dir / "vid_output").mkdir(exist_ok=True)
     
     # Update the config file with the new image and audio paths
     config_path = APP_DIR / "configs/inference/test.yaml"
@@ -230,13 +238,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 processed_image_bytes = preprocess_image(image_bytes)
                 
                 # Save the processed image
-                image_path = APP_DIR / "inputs" / "current_image.jpg"
+                image_path = INPUT_DIR / "images" / "current_image.jpg"
                 with open(image_path, 'wb') as f:
                     f.write(processed_image_bytes)
                 
                 # Save the audio
                 audio_bytes = base64.b64decode(message["audio_base64"])
-                audio_path = APP_DIR / "inputs" / "current_audio.wav"
+                audio_path = INPUT_DIR / "audio" / "current_audio.wav"
                 with open(audio_path, 'wb') as f:
                     f.write(audio_bytes)
                 
