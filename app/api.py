@@ -208,4 +208,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, websocket_ping_interval=30, websocket_ping_timeout=120) 
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
