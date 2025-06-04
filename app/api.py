@@ -14,6 +14,8 @@ import os
 import sys
 import subprocess
 from PIL import Image
+from queue import Queue
+import threading
 
 # Get the absolute path to the app directory
 APP_DIR = Path(__file__).parent.absolute()
@@ -38,6 +40,9 @@ app.add_middleware(
 class LipSyncInput(BaseModel):
     image_base64: str
     audio_base64: str
+
+# Global message queue for communication between sync and async code
+message_queue = Queue()
 
 def save_base64_to_file(base64_str: str, file_path: Path) -> None:
     """Save base64 string to a file."""
@@ -76,13 +81,19 @@ def preprocess_image(image_bytes):
     _, buffer = cv2.imencode('.jpg', resized)
     return buffer.tobytes()
 
-def run_inference(image_path, audio_path):
+async def run_inference(image_path, audio_path, websocket):
     # Ensure output directory exists
     output_dir = APP_DIR / "outputs"
     print(f"Output directory: {output_dir}")
     output_dir.mkdir(exist_ok=True)
     (output_dir / "tmp").mkdir(exist_ok=True)
     (output_dir / "vid_output").mkdir(exist_ok=True)
+    
+    # Send initial message
+    await websocket.send_json({
+        "status": "processing",
+        "message": "Starting inference process..."
+    })
     
     # Run the realtime inference script
     cmd = [
@@ -115,10 +126,21 @@ def run_inference(image_path, audio_path):
             # Send 'y' to the process when it asks about recreating the avatar
             process.communicate(input='y\n')
             
+            # Send progress messages at key points
+            await websocket.send_json({
+                "status": "processing",
+                "message": "Loading models and preparing data..."
+            })
+            
             if process.returncode == 0:
                 # Get the result video path from the script's output
                 script_output = MUSETALK_DIR / "results/v15/avatars/avator_1/vid_output/audio_0.mp4"
                 if script_output.exists():
+                    await websocket.send_json({
+                        "status": "processing",
+                        "message": "Processing complete, preparing final video..."
+                    })
+                    
                     # Copy the file to our output directory
                     import shutil
                     our_output = output_dir / "result.mp4"
@@ -139,6 +161,23 @@ def run_inference(image_path, audio_path):
             
     except subprocess.CalledProcessError as e:
         raise Exception(f"Inference failed: {e}")
+
+async def send_messages(websocket):
+    """Async function to send messages from queue to WebSocket"""
+    while True:
+        try:
+            # Get message from queue with timeout
+            message = message_queue.get(timeout=0.1)
+            await websocket.send_json({
+                "status": "processing",
+                "message": message
+            })
+        except Queue.Empty:
+            # No messages in queue, continue
+            continue
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            break
 
 @app.websocket("/ws/lipsync")
 async def websocket_endpoint(websocket: WebSocket):
@@ -181,8 +220,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     audio_path = audio_file.name
                 
                 try:
-                    # Run inference
-                    video_base64 = run_inference(image_path, audio_path)
+                    # Start message sender in background
+                    message_sender = asyncio.create_task(send_messages(websocket))
+                    
+                    # Run inference (this will block and put messages in queue)
+                    video_base64 = await run_inference(image_path, audio_path, websocket)
+                    
+                    # Cancel message sender
+                    message_sender.cancel()
                     
                     # Send the result
                     await websocket.send_json({
