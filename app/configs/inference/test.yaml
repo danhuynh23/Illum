@@ -1,10 +1,10 @@
 avator_1:
   audio_clips:
-    audio_0: ..\inputs\current_audio.wav
+    audio_0: ..\inputs\audio\current_audio.wav
   avatar_id: avator_1
   bbox_shift: 10
   output_dir: results/v15/avatars/avator_1
   preparation: true
   tmp_dir: results/v15/avatars/avator_1/tmp
   vid_output_dir: results/v15/avatars/avator_1/vid_output
-  video_path: ..\inputs\current_image.jpg
+  video_path: ..\inputs\images\current_image.jpg

@@ -62,9 +62,10 @@ async def test_lipsync(image_path, audio_path):
                     if "status" in data:
                         print(f"Status: {data['message']}")
                         if data["status"] == "success":
-                            # Save the video to client's output directory
+                            # Save the video to client's output directory with timestamp
                             video_bytes = base64.b64decode(data["video_base64"])
-                            output_path = OUTPUT_DIR / "videos" / "output.mp4"
+                            timestamp = int(time.time())
+                            output_path = OUTPUT_DIR / "videos" / f"output_{timestamp}.mp4"
                             with open(output_path, "wb") as f:
                                 f.write(video_bytes)
                             print(f"Video saved to {output_path}")

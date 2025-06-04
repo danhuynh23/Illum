@@ -22,11 +22,10 @@ import shutil
 # Get the absolute path to the app directory
 APP_DIR = Path(__file__).parent.absolute()
 MUSETALK_DIR = APP_DIR / "musetalk"
-PROJECT_ROOT = APP_DIR.parent
 
 # Define input/output directories
-INPUT_DIR = PROJECT_ROOT / "inputs"
-OUTPUT_DIR = PROJECT_ROOT / "outputs"
+INPUT_DIR = APP_DIR / "inputs"
+OUTPUT_DIR = APP_DIR / "outputs"
 
 # Create directories if they don't exist
 (INPUT_DIR / "images").mkdir(parents=True, exist_ok=True)
