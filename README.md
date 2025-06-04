@@ -1,52 +1,111 @@
-# Real-Time Lip-Syncing WebSocket API
+# MuseTalk WebSocket API
 
-This project provides a real-time lip-syncing WebSocket API using FastAPI and the Wav2Lip model. It accepts base64-encoded audio and image inputs and returns a base64-encoded video output.
+A real-time lip-syncing WebSocket API that uses the MuseTalk model to animate a speaking person from audio and image input.
+
+## Features
+
+- Real-time WebSocket communication
+- Base64-encoded input/output for audio and video
+- Docker support with CUDA
+- FastAPI backend
+
+## Prerequisites
+
+- NVIDIA GPU with CUDA support
+- Docker and nvidia-docker installed
+- Git
 
 ## Installation
 
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd lip-sync-api
+   cd <repository-name>
    ```
 
-2. Install dependencies:
+2. Build the Docker image:
    ```bash
-   pip install -r app/requirements.txt
+   docker build -t musetalk-api .
    ```
 
-3. Run the API:
+## Running the API
+
+1. Start the Docker container:
    ```bash
-   uvicorn app.main:app --reload
+   docker run --gpus all -p 8000:8000 musetalk-api
    ```
 
-## How It Works
+The API will be available at `ws://localhost:8000/ws/lipsync`
 
-- The API uses FastAPI to provide a WebSocket endpoint at `/ws`.
-- It accepts JSON payloads with base64-encoded audio and image data.
-- The Wav2Lip model processes the inputs and returns a base64-encoded video.
+## Testing with WebSocket Client
 
-## Testing with a WebSocket Client
+Here's a simple Python script to test the API:
 
-You can test the API using a WebSocket client (e.g., `websocat` or a browser-based client). Example payload:
+```python
+import asyncio
+import websockets
+import json
+import base64
 
+async def test_lipsync():
+    uri = "ws://localhost:8000/ws/lipsync"
+    async with websockets.connect(uri) as websocket:
+        # Read your image and audio files
+        with open("path/to/image.jpg", "rb") as f:
+            image_base64 = base64.b64encode(f.read()).decode()
+        with open("path/to/audio.wav", "rb") as f:
+            audio_base64 = base64.b64encode(f.read()).decode()
+        
+        # Send request
+        await websocket.send(json.dumps({
+            "image_base64": image_base64,
+            "audio_base64": audio_base64
+        }))
+        
+        # Receive response
+        response = await websocket.recv()
+        result = json.loads(response)
+        
+        if result["status"] == "success":
+            # Save the video
+            video_data = base64.b64decode(result["video_base64"])
+            with open("output.mp4", "wb") as f:
+                f.write(video_data)
+            print("Video saved as output.mp4")
+        else:
+            print("Error:", result["message"])
+
+asyncio.run(test_lipsync())
+```
+
+## API Specification
+
+### WebSocket Endpoint: `/ws/lipsync`
+
+#### Input Format
 ```json
 {
-  "audio": "<base64-encoded-audio>",
-  "image": "<base64-encoded-image>"
+    "image_base64": "base64-encoded-image-string",
+    "audio_base64": "base64-encoded-audio-string"
 }
 ```
 
-## Running with Docker
+#### Output Format
+```json
+{
+    "status": "success|error",
+    "video_base64": "base64-encoded-video-string" // if status is success
+    "message": "error-message" // if status is error
+}
+```
 
-1. Build the Docker image:
-   ```bash
-   docker build -t lip-sync-api .
-   ```
+## Notes
 
-2. Run the container:
-   ```bash
-   docker run -p 8000:8000 lip-sync-api
-   ```
+- The input image should contain a single person's face
+- Supported audio format: WAV
+- The API uses temporary storage for processing
+- GPU memory requirements: minimum 8GB recommended
 
-The API will be available at `ws://localhost:8000/ws`. 
+## License
+
+[Your License] 
