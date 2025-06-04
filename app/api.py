@@ -79,7 +79,10 @@ def preprocess_image(image_bytes):
 def run_inference(image_path, audio_path):
     # Ensure output directory exists
     output_dir = APP_DIR / "outputs"
+    print(f"Output directory: {output_dir}")
     output_dir.mkdir(exist_ok=True)
+    (output_dir / "tmp").mkdir(exist_ok=True)
+    (output_dir / "vid_output").mkdir(exist_ok=True)
     
     # Run the realtime inference script
     cmd = [
@@ -87,7 +90,6 @@ def run_inference(image_path, audio_path):
         str(MUSETALK_DIR / "scripts/realtime_inference.py"),
         "--version", "v15",
         "--inference_config", str(APP_DIR / "configs/inference/test.yaml"),
-        "--result_dir", str(output_dir),
         "--fps", "25",
         "--batch_size", "2"
     ]
@@ -114,11 +116,16 @@ def run_inference(image_path, audio_path):
             process.communicate(input='y\n')
             
             if process.returncode == 0:
-                # Get the result video path
-                result_path = MUSETALK_DIR / "results/v15/avatars/avator_1/vid_output/audio_0.mp4"
-                if result_path.exists():
+                # Get the result video path from the script's output
+                script_output = MUSETALK_DIR / "results/v15/avatars/avator_1/vid_output/audio_0.mp4"
+                if script_output.exists():
+                    # Copy the file to our output directory
+                    import shutil
+                    our_output = output_dir / "result.mp4"
+                    shutil.copy2(script_output, our_output)
+                    
                     # Read the video file and convert to base64
-                    with open(result_path, 'rb') as f:
+                    with open(our_output, 'rb') as f:
                         video_bytes = f.read()
                     return base64.b64encode(video_bytes).decode('utf-8')
                 else:

@@ -1,6 +1,10 @@
 avator_1:
-  preparation: True
-  video_path: "../inputs/TrumpPortrait_resized.jpg"
+  avatar_id: "avator_1"
+  preparation: true
+  video_path: "inputs/TrumpPortrait_resized.jpg"
   bbox_shift: 10
   audio_clips:
-    audio_0: "../inputs/harvard_input.wav" 
+    audio_0: "inputs/harvard_input.wav"
+  output_dir: "../outputs"
+  tmp_dir: "../outputs/tmp"
+  vid_output_dir: "../outputs/vid_output" 
