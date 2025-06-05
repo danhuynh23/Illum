@@ -54,8 +54,8 @@ RUN mkdir -p \
     app/outputs/videos \
     app/musetalk/models \
     app/musetalk/results \
-    results/v15/avatars/avator_1/tmp \
-    results/v15/avatars/avator_1/vid_output \
+    /app/results/v15/avatars/avator_1/tmp \
+    /app/results/v15/avatars/avator_1/vid_output \
     /app/models/musetalkV15 \
     /app/models/whisper
 
