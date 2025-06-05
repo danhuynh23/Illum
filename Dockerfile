@@ -26,10 +26,19 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p app/inputs app/outputs
+RUN mkdir -p \
+    app/inputs/images \
+    app/inputs/audio \
+    app/outputs/videos \
+    app/musetalk/models \
+    app/musetalk/results
 
 # Set environment variables for Python path
 ENV PYTHONPATH=/app:/app/musetalk
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
 
 # Expose port
 EXPOSE 8000
