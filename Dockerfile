@@ -46,13 +46,15 @@ RUN mim install mmcv && \
 # Copy application code
 COPY . .
 
-# Create necessary directories
+# Create necessary directories with full path structure
 RUN mkdir -p \
     app/inputs/images \
     app/inputs/audio \
     app/outputs/videos \
     app/musetalk/models \
     app/musetalk/results \
+    app/musetalk/results/v15/avatars/avator_1/tmp \
+    app/musetalk/results/v15/avatars/avator_1/vid_output \
     /app/models/musetalkV15 \
     /app/models/whisper
 
