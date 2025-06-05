@@ -54,8 +54,8 @@ RUN mkdir -p \
     app/outputs/videos \
     app/musetalk/models \
     app/musetalk/results \
-    /app/results/v15/avatars/avator_1/tmp \
-    /app/results/v15/avatars/avator_1/vid_output \
+    app/musetalk/results/v15/avatars/avator_1/tmp \
+    app/musetalk/results/v15/avatars/avator_1/vid_output \
     /app/models/musetalkV15 \
     /app/models/whisper
 
@@ -67,6 +67,9 @@ ENV PORT=8000
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
+
+# Install additional codecs
+RUN apt-get update && apt-get install -y libavcodec-extra && rm -rf /var/lib/apt/lists/*
 
 # Expose port
 EXPOSE 8000
