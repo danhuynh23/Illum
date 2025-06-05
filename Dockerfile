@@ -1,43 +1,43 @@
-# Use NVIDIA CUDA base image
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+# Use official PyTorch image with CUDA 11.7
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
+ENV CFLAGS="-std=c++17"
+ENV CXXFLAGS="-std=c++17"
+ENV TORCH_CUDA_ARCH_LIST="7.5"
+ENV FORCE_CUDA=1
+ENV MMCV_WITH_OPS=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    wget \
     ffmpeg \
     ca-certificates \
+    build-essential \
+    cmake \
+    pkg-config \
+    libx11-dev \
+    libatlas-base-dev \
+    libgtk-3-dev \
+    libboost-python-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Miniconda
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh
-
-# Add conda to path
-ENV PATH $CONDA_DIR/bin:$PATH
 
 # Set working directory
 WORKDIR /app
 
-# Copy environment file
-COPY environment.yml .
+# Copy requirements file
+COPY requirements.txt .
 
-# Create conda environment with retry logic
-RUN conda config --set ssl_verify false && \
-    conda config --set channel_priority flexible && \
-    conda config --set pip_interop_enabled True && \
-    conda clean -afy && \
-    for i in {1..3}; do \
-        conda env create -f environment.yml && break || \
-        if [ $i -eq 3 ]; then exit 1; fi; \
-        echo "Retry $i failed, waiting before next attempt..." && \
-        sleep 10; \
-    done
+# Install Python dependencies
+RUN pip install -r requirements.txt 
+
+RUN pip install --no-cache-dir -U openmim 
+
+RUN mim install mmengine 
+RUN mim install mmcv && \
+    mim install mmdet && \
+    mim install mmpose
 
 # Copy application code
 COPY . .
@@ -48,7 +48,9 @@ RUN mkdir -p \
     app/inputs/audio \
     app/outputs/videos \
     app/musetalk/models \
-    app/musetalk/results
+    app/musetalk/results \
+    /app/models/musetalkV15 \
+    /app/models/whisper
 
 # Set environment variables
 ENV PYTHONPATH=/app:/app/musetalk
@@ -62,5 +64,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Run the application using conda run
-CMD ["/bin/bash", "-c", "source /opt/conda/etc/profile.d/conda.sh && conda activate MuseTalk && python app/api.py --host 0.0.0.0 --port 8000"] 
+# Run the application
+CMD ["python", "app/api.py", "--host", "0.0.0.0", "--port", "8000"] 
