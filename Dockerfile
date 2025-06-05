@@ -10,12 +10,8 @@ ENV TORCH_CUDA_ARCH_LIST="7.5"
 ENV FORCE_CUDA=1
 ENV MMCV_WITH_OPS=1
 
-# Install system dependencies
+# Install basic system dependencies
 RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    ffmpeg \
-    libx264-dev \
-    libavcodec-extra \
     ca-certificates \
     build-essential \
     cmake \
@@ -61,6 +57,14 @@ RUN mkdir -p \
 ENV PYTHONPATH=/app:/app/musetalk
 ENV HOST=0.0.0.0
 ENV PORT=8000
+
+# Install system ffmpeg with x264 support
+RUN apt-get update && \
+    apt-get install -y ffmpeg x264 libx264-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Replace the Conda ffmpeg with the system one
+RUN ln -sf /usr/bin/ffmpeg /opt/conda/bin/ffmpeg
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
