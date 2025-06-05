@@ -52,6 +52,17 @@ client/
 
 ## Installation
 
+### Clone MuseTalk Repository
+
+First, clone the MuseTalk repository into the app directory:
+
+```bash
+# From the project root directory
+cd app
+git clone https://github.com/TMElyralab/MuseTalk.git musetalk
+cd musetalk
+```
+
 ### Local Installation
 
 1. Clone the repository:
