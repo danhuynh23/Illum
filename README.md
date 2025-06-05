@@ -77,42 +77,6 @@ sh ./download_weights.sh
 download_weights.bat
 ```
 
-Alternatively, you can download the weights manually from the following links:
-
-1. Download our trained [weights](https://huggingface.co/TMElyralab/MuseTalk/tree/main)
-2. Download the weights of other components:
-   - [sd-vae-ft-mse](https://huggingface.co/stabilityai/sd-vae-ft-mse/tree/main)
-   - [whisper](https://huggingface.co/openai/whisper-tiny/tree/main)
-   - [dwpose](https://huggingface.co/yzd-v/DWPose/tree/main)
-   - [syncnet](https://huggingface.co/ByteDance/LatentSync/tree/main)
-   - [face-parse-bisent](https://drive.google.com/file/d/154JgKpzCPW82qINcVieuPH3fZ2e0P812/view?pli=1)
-   - [resnet18](https://download.pytorch.org/models/resnet18-5c106cde.pth)
-
-The weights should be organized in `models` as follows:
-```
-./models/
-├── musetalk
-│   └── musetalk.json
-│   └── pytorch_model.bin
-├── musetalkV15
-│   └── musetalk.json
-│   └── unet.pth
-├── syncnet
-│   └── latentsync_syncnet.pt
-├── dwpose
-│   └── dw-ll_ucoco_384.pth
-├── face-parse-bisent
-│   ├── 79999_iter.pth
-│   └── resnet18-5c106cde.pth
-├── sd-vae
-│   ├── config.json
-│   └── diffusion_pytorch_model.bin
-└── whisper
-    ├── config.json
-    ├── pytorch_model.bin
-    └── preprocessor_config.json
-```
-
 ### Docker Installation
 
 1. Build the Docker image:
@@ -133,24 +97,32 @@ docker run -p 8000:8000 lipsync-api
 
 ### Starting the API Server
 
-#### Local
+#### Docker (Recommended)
+```bash
+# For GPU support
+docker run --gpus all -p 8000:8000 lipsync-api
+
+# For CPU-only
+docker run -p 8000:8000 lipsync-api
+```
+
+#### Local (For Development/Testing)
 ```bash
 cd app
 python api.py
 ```
 
-#### Docker
-```bash
-docker run --gpus all -p 8000:8000 lipsync-api
-```
+### Testing the API
 
-### Testing with the Test Client
-
-The repository includes a test client that can be used to verify the API functionality:
+The repository includes a test client that can be used to verify the API functionality. This is particularly useful for testing the Docker container:
 
 ```bash
+# Test with Docker container running
 cd app
 python test_client.py --image path/to/image.jpg --audio path/to/audio.wav
+
+# Example with sample files
+python test_client.py --image samples/test_image.jpg --audio samples/test_audio.wav
 ```
 
 ### WebSocket API
@@ -212,7 +184,3 @@ The API includes comprehensive error handling for:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-[Add your license information here] 
