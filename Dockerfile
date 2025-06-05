@@ -13,11 +13,9 @@ ENV MMCV_WITH_OPS=1
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     software-properties-common \
-    && add-apt-repository ppa:savoury1/ffmpeg4 \
-    && apt-get update \
-    && apt-get install -y \
     ffmpeg \
     libx264-dev \
+    libavcodec-extra \
     ca-certificates \
     build-essential \
     cmake \
@@ -67,9 +65,6 @@ ENV PORT=8000
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
-
-# Install additional codecs
-RUN apt-get update && apt-get install -y libavcodec-extra && rm -rf /var/lib/apt/lists/*
 
 # Expose port
 EXPOSE 8000
