@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get update \
     && apt-get install -y \
     ffmpeg \
+    libx264-dev \
     ca-certificates \
     build-essential \
     cmake \
