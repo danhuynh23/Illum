@@ -19,6 +19,37 @@ This project provides a real-time lip-syncing WebSocket API using the MuseTalk m
 - Docker (for containerized deployment)
 - FFmpeg (required for video processing)
 
+## Project Structure
+
+The project is organized into two main directories:
+
+### App Directory (`app/`)
+```
+app/
+├── api.py           # Main WebSocket API server
+├── requirements.txt # Python dependencies
+├── setup_musetalk.py # MuseTalk setup script
+├── inference.py     # Inference utilities
+├── model.py         # Model definitions
+├── main.py          # Entry point for local testing
+├── test_infer.py    # Inference testing script
+├── configs/         # Configuration files
+├── musetalk/        # MuseTalk model implementation
+├── inputs/          # Input files directory
+└── outputs/         # Output files directory
+```
+
+### Client Directory (`client/`)
+```
+client/
+├── inputs/
+│   ├── images/    # Place your test images here
+│   └── audio/     # Place your test audio files here
+├── outputs/
+│   └── videos/    # Generated videos will be saved here
+└── test_client.py # The test client script
+```
+
 ## Installation
 
 ### Local Installation
@@ -114,16 +145,41 @@ python api.py
 
 ### Testing the API
 
-The repository includes a test client that can be used to verify the API functionality. This is particularly useful for testing the Docker container:
+The repository includes a test client that can be used to verify the API functionality. The client has the following directory structure:
 
+```
+client/
+├── inputs/
+│   ├── images/    # Place your test images here
+│   └── audio/     # Place your test audio files here
+├── outputs/
+│   └── videos/    # Generated videos will be saved here
+└── test_client.py # The test client script
+```
+
+To test the API:
+
+1. Place your test files in the appropriate directories:
+   - Put test images in `client/inputs/images/`
+   - Put test audio files in `client/inputs/audio/`
+
+2. Run the test client:
 ```bash
-# Test with Docker container running
-cd app
+# From the project root directory
+cd client
 python test_client.py --image path/to/image.jpg --audio path/to/audio.wav
 
-# Example with sample files
-python test_client.py --image samples/test_image.jpg --audio samples/test_audio.wav
+# Example with files in the inputs directory
+python test_client.py --image images/test_image.jpg --audio audio/test_audio.wav
 ```
+
+The test client will:
+- Connect to the WebSocket server
+- Send the image and audio files
+- Save the generated video in `client/outputs/videos/` with a timestamp
+- Display progress and status messages
+
+Note: The client automatically handles relative paths and will look for files in the `inputs` directory if absolute paths are not provided.
 
 ### WebSocket API
 
