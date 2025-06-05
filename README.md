@@ -19,9 +19,33 @@ This project provides a real-time lip-syncing WebSocket API using the MuseTalk m
 - Docker (for containerized deployment)
 - FFmpeg (required for video processing)
 
-## Project Structure
+## Initial Setup
 
-The project is organized into two main directories:
+1. Clone the main repository:
+```bash
+git clone https://github.com/danhuynh23/Illum
+cd Illum
+```
+
+2. Clone the MuseTalk repository:
+```bash
+cd app
+git clone https://github.com/TMElyralab/MuseTalk.git musetalk
+cd musetalk
+```
+
+3. Download required models:
+```bash
+# Download weights using the provided scripts:
+
+# For Linux:
+sh ./download_weights.sh
+
+# For Windows:
+download_weights.bat
+```
+
+After this setup, your project structure will look like this:
 
 ### App Directory (`app/`)
 ```
@@ -54,18 +78,12 @@ client/
 
 ### Option 1: Docker Installation (Recommended)
 
-1. Clone the repository:
-```bash
-git clone https://github.com/danhuynh23/Illum
-cd Illum
-```
-
-2. Build the Docker image:
+1. Build the Docker image:
 ```bash
 docker build -t lipsync-api .
 ```
 
-3. Run the container:
+2. Run the container:
 ```bash
 # For GPU support
 docker run --gpus all -p 8000:8000 lipsync-api
@@ -76,26 +94,13 @@ docker run -p 8000:8000 lipsync-api
 
 ### Option 2: Local Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/danhuynh23/Illum
-cd Illum
-```
-
-2. Clone the MuseTalk repository:
-```bash
-cd app
-git clone https://github.com/TMElyralab/MuseTalk.git musetalk
-cd musetalk
-```
-
-3. Create and activate a Python virtual environment:
+1. Create and activate a Python virtual environment:
 ```bash
 conda create -n lipsync python==3.10
 conda activate lipsync
 ```
 
-4. Install PyTorch 2.0.1:
+2. Install PyTorch 2.0.1:
 ```bash
 # Option 1: Using pip
 pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
@@ -104,12 +109,12 @@ pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https
 conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
 
-5. Install Python dependencies:
+3. Install Python dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-6. Install MMLab packages:
+4. Install MMLab packages:
 ```bash
 pip install --no-cache-dir -U openmim
 mim install mmengine
@@ -118,24 +123,13 @@ mim install "mmdet==3.1.0"
 mim install "mmpose==1.1.0"
 ```
 
-7. Setup FFmpeg:
+5. Setup FFmpeg:
    - [Download](https://github.com/BtbN/FFmpeg-Builds/releases) the ffmpeg-static package
    - For Windows: Add the `ffmpeg-xxx\bin` directory to your system's PATH
    - For Linux: Set the FFMPEG_PATH environment variable:
      ```bash
      export FFMPEG_PATH=/path/to/ffmpeg
      ```
-
-8. Download required models:
-```bash
-# Download weights using the provided scripts:
-
-# For Linux:
-sh ./download_weights.sh
-
-# For Windows:
-download_weights.bat
-```
 
 ## Usage
 
