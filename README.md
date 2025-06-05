@@ -9,12 +9,15 @@ This project provides a real-time lip-syncing WebSocket API using the MuseTalk m
 - Docker support for easy deployment
 - GPU acceleration support
 - Automatic image preprocessing
+- Support for multiple languages (Chinese, English, Japanese)
+- Real-time inference with 30fps+ on NVIDIA GPUs
 
 ## Prerequisites
 
 - Python 3.10 or higher
 - CUDA-compatible GPU (recommended)
 - Docker (for containerized deployment)
+- FFmpeg (required for video processing)
 
 ## Installation
 
@@ -26,18 +29,56 @@ git clone <repository-url>
 cd <repository-name>
 ```
 
-2. Install Python dependencies:
+2. Create and activate a Python virtual environment:
+```bash
+conda create -n lipsync python==3.10
+conda activate lipsync
+```
+
+3. Install PyTorch 2.0.1:
+```bash
+# Option 1: Using pip
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+
+# Option 2: Using conda
+conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
+```
+
+4. Install Python dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Download the required models:
+5. Install MMLab packages:
+```bash
+pip install --no-cache-dir -U openmim
+mim install mmengine
+mim install "mmcv==2.0.1"
+mim install "mmdet==3.1.0"
+mim install "mmpose==1.1.0"
+```
+
+6. Setup FFmpeg:
+   - [Download](https://github.com/BtbN/FFmpeg-Builds/releases) the ffmpeg-static package
+   - For Windows: Add the `ffmpeg-xxx\bin` directory to your system's PATH
+   - For Linux: Set the FFMPEG_PATH environment variable:
+     ```bash
+     export FFMPEG_PATH=/path/to/ffmpeg
+     ```
+
+7. Download required models:
 ```bash
 # Create model directories
-mkdir -p app/models/musetalk app/models/whisper
+mkdir -p app/models/musetalk app/models/whisper app/models/syncnet app/models/dwpose app/models/face-parse-bisent app/models/sd-vae
 
-# Download MuseTalk model files
-# (Add instructions for downloading model files)
+# Download model weights from:
+# - MuseTalk: https://huggingface.co/TMElyralab/MuseTalk/tree/main
+# - sd-vae-ft-mse: https://huggingface.co/stabilityai/sd-vae-ft-mse/tree/main
+# - whisper: https://huggingface.co/openai/whisper-tiny/tree/main
+# - dwpose: https://huggingface.co/yzd-v/DWPose/tree/main
+# - syncnet: https://huggingface.co/ByteDance/LatentSync/tree/main
+# - face-parse-bisent: https://drive.google.com/file/d/154JgKpzCPW82qINcVieuPH3fZ2e0P812/view?pli=1
+# - resnet18: https://download.pytorch.org/models/resnet18-5c106cde.pth
 ```
 
 ### Docker Installation
@@ -49,7 +90,11 @@ docker build -t lipsync-api .
 
 2. Run the container:
 ```bash
+# For GPU support
 docker run --gpus all -p 8000:8000 lipsync-api
+
+# For CPU-only
+docker run -p 8000:8000 lipsync-api
 ```
 
 ## Usage
@@ -123,6 +168,14 @@ The API includes comprehensive error handling for:
 - Images are automatically resized to optimize processing
 - Temporary files are cleaned up after processing
 - WebSocket connection is maintained for real-time communication
+- Recommended input video frame rate: 25fps
+- Real-time inference can achieve 30fps+ on NVIDIA Tesla V100
+
+## Limitations
+
+- Resolution: The face region size is 256 x 256. For higher resolution, consider using super-resolution models like GFPGAN
+- Identity preservation: Some facial details (mustache, lip shape, color) may not be perfectly preserved
+- Jitter: Some jitter may occur due to single-frame generation
 
 ## Contributing
 
