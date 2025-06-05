@@ -68,9 +68,6 @@ mim install "mmpose==1.1.0"
 
 7. Download required models:
 ```bash
-# Create model directories
-mkdir -p app/models/musetalk app/models/whisper app/models/syncnet app/models/dwpose app/models/face-parse-bisent app/models/sd-vae
-
 # Download weights using the provided scripts:
 
 # For Linux:
