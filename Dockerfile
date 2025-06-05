@@ -12,6 +12,10 @@ ENV MMCV_WITH_OPS=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:savoury1/ffmpeg4 \
+    && apt-get update \
+    && apt-get install -y \
     ffmpeg \
     ca-certificates \
     build-essential \
